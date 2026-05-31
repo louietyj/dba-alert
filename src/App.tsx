@@ -8,6 +8,7 @@ import { Graph } from './graph';
 import { Controls } from './controls';
 
 const CURSOR_TIMEOUT_MS = 3000;
+const HISTORY_SECONDS = 30;
 
 export default function App() {
   const [settings, updateSettings] = useSettings();
@@ -63,19 +64,13 @@ export default function App() {
     };
   }, []);
 
-  // Trim sample buffer when historySeconds decreases
-  useEffect(() => {
-    const maxSamples = Math.floor(settings.historySeconds * 10);
-    setSamples(prev => (prev.length > maxSamples ? prev.slice(-maxSamples) : prev));
-  }, [settings.historySeconds]);
-
   const handleSample = useCallback((rawDba: number) => {
     const {
-      calibrationOffset, thresholdDba, historySeconds,
+      calibrationOffset, thresholdDba,
       solidWindowSec, solidPct, flashWindowSec, flashPct,
     } = settingsRef.current;
     const dba = rawDba + calibrationOffset;
-    const maxSamples = Math.floor(historySeconds * 10);
+    const maxSamples = HISTORY_SECONDS * 10;
 
     setCurrentDba(dba);
     setSamples(prev => {
@@ -161,7 +156,7 @@ export default function App() {
         <Graph
           samples={samples}
           threshold={settings.thresholdDba}
-          historySeconds={settings.historySeconds}
+          historySeconds={HISTORY_SECONDS}
         />
       </div>
       <Controls

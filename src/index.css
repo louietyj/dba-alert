@@ -102,6 +102,16 @@ body.cursor-inactive * {
 /* Controls */
 .controls {
   flex-shrink: 0;
+}
+
+.controls-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 32px;
+  margin-bottom: 6px;
+}
+
+.controls-col {
   display: flex;
   flex-direction: column;
   gap: 6px;

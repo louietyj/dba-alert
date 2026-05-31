@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 
 export interface Settings {
   thresholdDba: number;
-  historySeconds: number;
   calibrationOffset: number;
   solidWindowSec: number;
   solidPct: number;
@@ -11,11 +10,10 @@ export interface Settings {
 }
 
 const DEFAULTS: Settings = {
-  thresholdDba: 75,
-  historySeconds: 30,
+  thresholdDba: 70,
   calibrationOffset: 0,
   solidWindowSec: 1,
-  solidPct: 0,
+  solidPct: 20,
   flashWindowSec: 2,
   flashPct: 50,
 };

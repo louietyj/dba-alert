@@ -37,69 +37,66 @@ function SliderRow({ label, value, min, max, step, format, onChange }: SliderRow
 export function Controls({ settings, onChange, running, onToggle }: ControlsProps) {
   return (
     <div className="controls">
-      <SliderRow
-        label="Threshold"
-        value={settings.thresholdDba}
-        min={40}
-        max={120}
-        step={1}
-        format={v => `${v} dBA`}
-        onChange={v => onChange({ thresholdDba: v })}
-      />
-      <SliderRow
-        label="Solid window"
-        value={settings.solidWindowSec}
-        min={0.5}
-        max={10}
-        step={0.5}
-        format={v => `${v} s`}
-        onChange={v => onChange({ solidWindowSec: v })}
-      />
-      <SliderRow
-        label="Solid >"
-        value={settings.solidPct}
-        min={0}
-        max={99}
-        step={1}
-        format={v => `${v}%`}
-        onChange={v => onChange({ solidPct: v })}
-      />
-      <SliderRow
-        label="Flash window"
-        value={settings.flashWindowSec}
-        min={0.5}
-        max={10}
-        step={0.5}
-        format={v => `${v} s`}
-        onChange={v => onChange({ flashWindowSec: v })}
-      />
-      <SliderRow
-        label="Flash >"
-        value={settings.flashPct}
-        min={0}
-        max={99}
-        step={1}
-        format={v => `${v}%`}
-        onChange={v => onChange({ flashPct: v })}
-      />
-      <SliderRow
-        label="History"
-        value={settings.historySeconds}
-        min={5}
-        max={120}
-        step={5}
-        format={v => `${v} s`}
-        onChange={v => onChange({ historySeconds: v })}
-      />
-      <SliderRow
-        label="Cal. offset"
-        value={settings.calibrationOffset}
-        min={-30}
-        max={30}
-        step={1}
-        format={v => `${v >= 0 ? '+' : ''}${v} dB`}
-        onChange={v => onChange({ calibrationOffset: v })}
-      />
+      <div className="controls-columns">
+        <div className="controls-col">
+          <SliderRow
+            label="Threshold"
+            value={settings.thresholdDba}
+            min={40}
+            max={120}
+            step={1}
+            format={v => `${v} dBA`}
+            onChange={v => onChange({ thresholdDba: v })}
+          />
+          <SliderRow
+            label="Cal. offset"
+            value={settings.calibrationOffset}
+            min={-30}
+            max={30}
+            step={1}
+            format={v => `${v >= 0 ? '+' : ''}${v} dB`}
+            onChange={v => onChange({ calibrationOffset: v })}
+          />
+        </div>
+        <div className="controls-col">
+          <SliderRow
+            label="Solid window"
+            value={settings.solidWindowSec}
+            min={0.5}
+            max={10}
+            step={0.5}
+            format={v => `${v} s`}
+            onChange={v => onChange({ solidWindowSec: v })}
+          />
+          <SliderRow
+            label="Solid >"
+            value={settings.solidPct}
+            min={0}
+            max={99}
+            step={1}
+            format={v => `${v}%`}
+            onChange={v => onChange({ solidPct: v })}
+          />
+          <SliderRow
+            label="Flash window"
+            value={settings.flashWindowSec}
+            min={0.5}
+            max={10}
+            step={0.5}
+            format={v => `${v} s`}
+            onChange={v => onChange({ flashWindowSec: v })}
+          />
+          <SliderRow
+            label="Flash >"
+            value={settings.flashPct}
+            min={0}
+            max={99}
+            step={1}
+            format={v => `${v}%`}
+            onChange={v => onChange({ flashPct: v })}
+          />
+        </div>
+      </div>
       <div className="button-row">
         <button className="start-button" onClick={onToggle}>
           {running ? '⏹ Stop' : '▶ Start'}
