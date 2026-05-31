@@ -1,57 +1,50 @@
 import { describe, it, expect } from 'vitest';
 import { computeAlertState } from '../src/alert';
 
-const NOW = 1000000; // arbitrary fixed timestamp
 const THRESHOLD = 80;
-const SUSTAIN_MS = 3000;
+const below = (n: number) => Array<number>(n).fill(70);
+const above = (n: number) => Array<number>(n).fill(90);
 
 describe('computeAlertState', () => {
-  it('returns listening when dba is below threshold', () => {
-    const result = computeAlertState(75, THRESHOLD, SUSTAIN_MS, null, NOW);
-    expect(result.state).toBe('listening');
-    expect(result.aboveSince).toBeNull();
+  it('returns listening when all samples below threshold', () => {
+    expect(computeAlertState(below(20), THRESHOLD)).toBe('listening');
   });
 
-  it('returns listening when dba equals threshold', () => {
-    const result = computeAlertState(80, THRESHOLD, SUSTAIN_MS, null, NOW);
-    expect(result.state).toBe('listening');
+  it('returns listening when sample array is empty', () => {
+    expect(computeAlertState([], THRESHOLD)).toBe('listening');
   });
 
-  it('returns alert-solid immediately when threshold first exceeded', () => {
-    const result = computeAlertState(85, THRESHOLD, SUSTAIN_MS, null, NOW);
-    expect(result.state).toBe('alert-solid');
-    expect(result.aboveSince).toBe(NOW);
+  it('returns alert-solid when any sample in the last 1 s exceeds threshold', () => {
+    // 9 below then 1 above — above lands in the solid window (last 10)
+    expect(computeAlertState([...below(9), ...above(1)], THRESHOLD)).toBe('alert-solid');
   });
 
-  it('stays alert-solid before sustain duration elapses', () => {
-    const aboveSince = NOW - 2000; // 2s ago
-    const result = computeAlertState(85, THRESHOLD, SUSTAIN_MS, aboveSince, NOW);
-    expect(result.state).toBe('alert-solid');
-    expect(result.aboveSince).toBe(aboveSince); // timestamp preserved
+  it('returns listening when exceedance is older than 1 s', () => {
+    // 1 above followed by 19 below — pushed out of solid window (last 10)
+    expect(computeAlertState([...above(1), ...below(19)], THRESHOLD)).toBe('listening');
   });
 
-  it('transitions to alert-flash after sustain duration', () => {
-    const aboveSince = NOW - 3000; // exactly at sustain boundary
-    const result = computeAlertState(85, THRESHOLD, SUSTAIN_MS, aboveSince, NOW);
-    expect(result.state).toBe('alert-flash');
+  it('returns alert-flash when >50% of last 2 s exceeds threshold', () => {
+    // 11 above out of 20 = 55%
+    expect(computeAlertState([...below(9), ...above(11)], THRESHOLD)).toBe('alert-flash');
   });
 
-  it('stays alert-flash well past sustain duration', () => {
-    const aboveSince = NOW - 10000;
-    const result = computeAlertState(85, THRESHOLD, SUSTAIN_MS, aboveSince, NOW);
-    expect(result.state).toBe('alert-flash');
+  it('stays alert-solid when exactly 50% of last 2 s exceeds threshold', () => {
+    // 10 above out of 20 = 50% — not strictly greater
+    expect(computeAlertState([...below(10), ...above(10)], THRESHOLD)).toBe('alert-solid');
   });
 
-  it('recovers to listening when dba drops below threshold', () => {
-    const aboveSince = NOW - 5000; // was flashing
-    const result = computeAlertState(70, THRESHOLD, SUSTAIN_MS, aboveSince, NOW);
-    expect(result.state).toBe('listening');
-    expect(result.aboveSince).toBeNull();
+  it('returns alert-flash even when the most recent sample is below threshold', () => {
+    // 11 above then 9 below — flash window (last 20) still has 55% above
+    expect(computeAlertState([...above(11), ...below(9)], THRESHOLD)).toBe('alert-flash');
   });
 
-  it('aboveSince is preserved while above threshold', () => {
-    const aboveSince = NOW - 1000;
-    const result = computeAlertState(90, THRESHOLD, SUSTAIN_MS, aboveSince, NOW + 500);
-    expect(result.aboveSince).toBe(aboveSince);
+  it('flash takes priority when both conditions are met', () => {
+    expect(computeAlertState(above(20), THRESHOLD)).toBe('alert-flash');
+  });
+
+  it('recovers to listening after enough below-threshold samples accumulate', () => {
+    // Old above samples pushed out of both windows by 20 below samples
+    expect(computeAlertState([...above(5), ...below(20)], THRESHOLD)).toBe('listening');
   });
 });

@@ -7,9 +7,10 @@ import type { AlertState } from './alert';
 import { Graph } from './graph';
 import { Controls } from './controls';
 
+const FLASH_WINDOW = 20; // samples for 2 s flash window
+
 export default function App() {
   const [settings, updateSettings] = useSettings();
-  // Ref so the stable handleSample callback always reads fresh settings
   const settingsRef = useRef<Settings>(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
 
@@ -17,8 +18,24 @@ export default function App() {
   const [currentDba, setCurrentDba] = useState<number | null>(null);
   const [samples, setSamples] = useState<number[]>([]);
   const [alertState, setAlertState] = useState<AlertState>('listening');
-  const aboveSinceRef = useRef<number | null>(null);
+  const recentSamplesRef = useRef<number[]>([]);
   const meterRef = useRef<DbaMeter | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => undefined);
+    } else {
+      document.exitFullscreen().catch(() => undefined);
+    }
+  }, []);
 
   // Trim sample buffer when historySeconds decreases
   useEffect(() => {
@@ -26,10 +43,8 @@ export default function App() {
     setSamples(prev => (prev.length > maxSamples ? prev.slice(-maxSamples) : prev));
   }, [settings.historySeconds]);
 
-  // Stable callback — reads fresh settings from ref each invocation
   const handleSample = useCallback((rawDba: number) => {
-    const { calibrationOffset, thresholdDba, sustainSeconds, historySeconds } =
-      settingsRef.current;
+    const { calibrationOffset, thresholdDba, historySeconds } = settingsRef.current;
     const dba = rawDba + calibrationOffset;
     const maxSamples = Math.floor(historySeconds * 10);
 
@@ -39,16 +54,9 @@ export default function App() {
       return next.length > maxSamples ? next.slice(-maxSamples) : next;
     });
 
-    const now = Date.now();
-    const result = computeAlertState(
-      dba,
-      thresholdDba,
-      sustainSeconds * 1000,
-      aboveSinceRef.current,
-      now,
-    );
-    aboveSinceRef.current = result.aboveSince;
-    setAlertState(result.state);
+    const recent = recentSamplesRef.current;
+    recentSamplesRef.current = [...recent, dba].slice(-FLASH_WINDOW);
+    setAlertState(computeAlertState(recentSamplesRef.current, thresholdDba));
   }, []);
 
   const start = useCallback(async () => {
@@ -59,7 +67,13 @@ export default function App() {
     setSamples([]);
     setCurrentDba(null);
     setAlertState('listening');
-    aboveSinceRef.current = null;
+    recentSamplesRef.current = [];
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      wakeLockRef.current = await (navigator as any).wakeLock?.request('screen');
+    } catch {
+      // wake lock unavailable or denied — not fatal
+    }
   }, [handleSample]);
 
   const stop = useCallback(() => {
@@ -67,7 +81,9 @@ export default function App() {
     meterRef.current = null;
     setRunning(false);
     setAlertState('listening');
-    aboveSinceRef.current = null;
+    recentSamplesRef.current = [];
+    wakeLockRef.current?.release();
+    wakeLockRef.current = null;
   }, []);
 
   const toggleRunning = useCallback(() => {
@@ -93,7 +109,16 @@ export default function App() {
   return (
     <div className={`app ${bgClass}`}>
       <header className="app-header">
-        <span className="app-title">dBA Alert</span>
+        <div className="header-left">
+          <span className="app-title">dBA Alert</span>
+          <button
+            className="icon-button"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            {isFullscreen ? '⊡' : '⛶'}
+          </button>
+        </div>
         <span className={`current-dba ${alertState !== 'listening' ? 'current-dba--alert' : ''}`}>
           {currentDba !== null ? `${Math.round(currentDba)} dBA` : '— dBA'}
         </span>

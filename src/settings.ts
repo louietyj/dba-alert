@@ -3,14 +3,12 @@ import { useState, useEffect } from 'react';
 export interface Settings {
   thresholdDba: number;
   historySeconds: number;
-  sustainSeconds: number;
   calibrationOffset: number;
 }
 
 const DEFAULTS: Settings = {
-  thresholdDba: 85,
+  thresholdDba: 75,
   historySeconds: 30,
-  sustainSeconds: 3,
   calibrationOffset: 0,
 };
 

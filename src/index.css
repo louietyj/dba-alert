@@ -10,6 +10,7 @@ html, body {
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   background: #000;
   color: #fff;
+  cursor: none;
 }
 
 #root {
@@ -33,7 +34,7 @@ html, body {
   100% { background-color: #cc0000; }
 }
 .bg-flash {
-  animation: flash 1.5s steps(1) infinite;
+  animation: flash 0.125s steps(1) infinite;
 }
 
 /* Header */
@@ -45,12 +46,32 @@ html, body {
   flex-shrink: 0;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .app-title {
   font-size: 0.9rem;
   font-weight: 600;
   color: #555;
   text-transform: uppercase;
   letter-spacing: 0.12em;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: #444;
+  font-size: 1rem;
+  padding: 2px 4px;
+  line-height: 1;
+  cursor: none;
+}
+
+.icon-button:hover {
+  color: #888;
 }
 
 .current-dba {

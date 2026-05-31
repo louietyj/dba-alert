@@ -56,15 +56,6 @@ export function Controls({ settings, onChange, running, onToggle }: ControlsProp
         onChange={v => onChange({ historySeconds: v })}
       />
       <SliderRow
-        label="Sustain"
-        value={settings.sustainSeconds}
-        min={1}
-        max={30}
-        step={1}
-        format={v => `${v} s`}
-        onChange={v => onChange({ sustainSeconds: v })}
-      />
-      <SliderRow
         label="Cal. offset"
         value={settings.calibrationOffset}
         min={-30}
