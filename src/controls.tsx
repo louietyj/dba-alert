@@ -47,6 +47,42 @@ export function Controls({ settings, onChange, running, onToggle }: ControlsProp
         onChange={v => onChange({ thresholdDba: v })}
       />
       <SliderRow
+        label="Solid window"
+        value={settings.solidWindowSec}
+        min={0.5}
+        max={10}
+        step={0.5}
+        format={v => `${v} s`}
+        onChange={v => onChange({ solidWindowSec: v })}
+      />
+      <SliderRow
+        label="Solid >"
+        value={settings.solidPct}
+        min={0}
+        max={99}
+        step={1}
+        format={v => `${v}%`}
+        onChange={v => onChange({ solidPct: v })}
+      />
+      <SliderRow
+        label="Flash window"
+        value={settings.flashWindowSec}
+        min={0.5}
+        max={10}
+        step={0.5}
+        format={v => `${v} s`}
+        onChange={v => onChange({ flashWindowSec: v })}
+      />
+      <SliderRow
+        label="Flash >"
+        value={settings.flashPct}
+        min={0}
+        max={99}
+        step={1}
+        format={v => `${v}%`}
+        onChange={v => onChange({ flashPct: v })}
+      />
+      <SliderRow
         label="History"
         value={settings.historySeconds}
         min={5}

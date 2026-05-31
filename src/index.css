@@ -10,7 +10,11 @@ html, body {
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   background: #000;
   color: #fff;
-  cursor: none;
+}
+
+body.cursor-inactive,
+body.cursor-inactive * {
+  cursor: none !important;
 }
 
 #root {
@@ -67,7 +71,7 @@ html, body {
   font-size: 1rem;
   padding: 2px 4px;
   line-height: 1;
-  cursor: none;
+  cursor: pointer;
 }
 
 .icon-button:hover {

@@ -7,7 +7,7 @@ import type { AlertState } from './alert';
 import { Graph } from './graph';
 import { Controls } from './controls';
 
-const FLASH_WINDOW = 20; // samples for 2 s flash window
+const CURSOR_TIMEOUT_MS = 3000;
 
 export default function App() {
   const [settings, updateSettings] = useSettings();
@@ -22,19 +22,45 @@ export default function App() {
   const meterRef = useRef<DbaMeter | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
+  // Fullscreen
   const [isFullscreen, setIsFullscreen] = useState(false);
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
-
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => undefined);
     } else {
       document.exitFullscreen().catch(() => undefined);
     }
+  }, []);
+
+  // Hide cursor after inactivity
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const onActive = () => {
+      document.body.classList.remove('cursor-inactive');
+      clearTimeout(timer);
+      timer = setTimeout(
+        () => document.body.classList.add('cursor-inactive'),
+        CURSOR_TIMEOUT_MS,
+      );
+    };
+    document.addEventListener('mousemove', onActive);
+    document.addEventListener('mousedown', onActive);
+    // Start the timer immediately so cursor hides if user never moves the mouse
+    timer = setTimeout(
+      () => document.body.classList.add('cursor-inactive'),
+      CURSOR_TIMEOUT_MS,
+    );
+    return () => {
+      document.removeEventListener('mousemove', onActive);
+      document.removeEventListener('mousedown', onActive);
+      clearTimeout(timer);
+      document.body.classList.remove('cursor-inactive');
+    };
   }, []);
 
   // Trim sample buffer when historySeconds decreases
@@ -44,7 +70,10 @@ export default function App() {
   }, [settings.historySeconds]);
 
   const handleSample = useCallback((rawDba: number) => {
-    const { calibrationOffset, thresholdDba, historySeconds } = settingsRef.current;
+    const {
+      calibrationOffset, thresholdDba, historySeconds,
+      solidWindowSec, solidPct, flashWindowSec, flashPct,
+    } = settingsRef.current;
     const dba = rawDba + calibrationOffset;
     const maxSamples = Math.floor(historySeconds * 10);
 
@@ -54,9 +83,14 @@ export default function App() {
       return next.length > maxSamples ? next.slice(-maxSamples) : next;
     });
 
-    const recent = recentSamplesRef.current;
-    recentSamplesRef.current = [...recent, dba].slice(-FLASH_WINDOW);
-    setAlertState(computeAlertState(recentSamplesRef.current, thresholdDba));
+    const solidW = Math.max(1, Math.round(solidWindowSec * 10));
+    const flashW = Math.max(1, Math.round(flashWindowSec * 10));
+    const bufferSize = Math.max(solidW, flashW);
+    recentSamplesRef.current = [...recentSamplesRef.current, dba].slice(-bufferSize);
+
+    setAlertState(computeAlertState(
+      recentSamplesRef.current, thresholdDba, solidW, solidPct, flashW, flashPct,
+    ));
   }, []);
 
   const start = useCallback(async () => {

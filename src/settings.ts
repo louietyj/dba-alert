@@ -4,12 +4,20 @@ export interface Settings {
   thresholdDba: number;
   historySeconds: number;
   calibrationOffset: number;
+  solidWindowSec: number;
+  solidPct: number;
+  flashWindowSec: number;
+  flashPct: number;
 }
 
 const DEFAULTS: Settings = {
   thresholdDba: 75,
   historySeconds: 30,
   calibrationOffset: 0,
+  solidWindowSec: 1,
+  solidPct: 0,
+  flashWindowSec: 2,
+  flashPct: 50,
 };
 
 const STORAGE_KEY = 'dba-alert-settings';
